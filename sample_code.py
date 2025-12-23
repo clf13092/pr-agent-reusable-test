@@ -1,4 +1,5 @@
 # テスト用のPythonファイル - 意図的にコーディング規約違反を含む
+# 新しいPR v2でのテスト実行
 
 import os,sys
 import requests
@@ -6,6 +7,8 @@ import requests
 # ハードコーディングされたAPIキー（セキュリティ違反）
 API_KEY="sk-1234567890abcdef"
 DATABASE_PASSWORD="password123"
+SECRET_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"  # 新しい機密情報を追加
+AWS_ACCESS_KEY="AKIAIOSFODNN7EXAMPLE"  # AWS認証情報のハードコーディング
 
 def badFunction(x,y):
     """不適切な関数名とフォーマット"""
