@@ -10,6 +10,3 @@ jobs:
     uses: clf13092/copilot_code_review_test/.github/workflows/reusable-pr-agent.yml@main
     with:
       custom_instructions_file: 'CODING_STANDARDS.md'
-    secrets:
-      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
