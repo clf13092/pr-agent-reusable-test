@@ -1,6 +1,7 @@
 # テスト用のPythonファイル - 意図的にコーディング規約違反を含む
 # 新しいコメントを追加してPRをトリガー
 # reusable workflowのテストを実行中
+# リポジトリをpublicに変更後のテスト
 
 import os,sys
 import requests
