@@ -1,0 +1,174 @@
+name: Reusable PR Agent Review
+
+on:
+  workflow_call:
+    inputs:
+      aws_region:
+        description: 'AWS Region for Bedrock'
+        required: false
+        type: string
+        default: 'ap-northeast-1'
+      model_id:
+        description: 'Bedrock Model ID or Inference Profile ARN'
+        required: false
+        type: string
+        default: 'arn:aws:bedrock:ap-northeast-1:179323781340:inference-profile/global.anthropic.claude-sonnet-4-5-20250929-v1:0'
+      max_findings:
+        description: 'Maximum number of findings to report'
+        required: false
+        type: number
+        default: 10
+      enable_security_review:
+        description: 'Enable security review'
+        required: false
+        type: boolean
+        default: false
+      language:
+        description: 'Language for responses (ja/en)'
+        required: false
+        type: string
+        default: 'ja'
+      custom_instructions_file:
+        description: 'Path to custom instructions file (e.g., README.md)'
+        required: false
+        type: string
+        default: 'README.md'
+    secrets:
+      AWS_ROLE_ARN:
+        description: 'AWS IAM Role ARN for OIDC authentication'
+        required: true
+      GITHUB_TOKEN:
+        description: 'GitHub token for PR operations'
+        required: false
+
+jobs:
+  review:
+    if: ${{ github.event.sender.type != 'Bot' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      repository-projects: read
+      id-token: write
+      actions: read
+      checks: read
+      statuses: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Read custom instructions
+        run: |
+          # Create base instructions
+          cat > coding_rules.txt << 'EOF'
+          IMPORTANT: Review the code according to the following standards and ALWAYS report violations in this EXACT table format:
+
+          ## 🔍 Code Review Results
+
+          | Violation ID | Category | File | Line Number | Description | Severity |
+          |--------------|----------|------|-------------|-------------|----------|
+          | V012 | Formatting | file.tf | 5 | Missing spaces around = operator | Low |
+
+          MANDATORY REQUIREMENTS:
+          1. Use EXACT violation IDs from the list below (V001-V019)
+          2. Always include the complete table even for single violations
+          3. Match violations to specific line numbers
+          4. Use descriptions in the specified language
+
+          VIOLATION ID MAPPING:
+          - V001: ファイル構成 (File Structure) - Medium
+          - V004: モジュール化 (Modularization) - Medium  
+          - V005: リソース名規則 (Resource Naming) - Medium
+          - V006: 変数名規則 (Variable Naming) - Medium
+          - V007: タグ名規則 (Tag Naming) - Medium
+          - V008: モジュール名規則 (Module Naming) - Medium
+          - V009: インデント (Indentation) - Low
+          - V010: 空行 (Empty Lines) - Low
+          - V011: 改行 (Line Breaks) - Low
+          - V012: スペース配置 (Spacing) - Low
+          - V013: 位置揃え (Alignment) - Low
+          - V014: コメント (Comments) - Low
+          - V015: リソース説明 (Resource Description) - Low
+          - V016: モジュール説明 (Module Description) - Low
+          - V017: 機密情報管理 (Secret Management) - High
+          - V018: セキュリティグループ (Security Groups) - High
+          - V019: IAM権限 (IAM Permissions) - High
+
+          CODING STANDARDS:
+          EOF
+          
+          # Append custom instructions if file exists
+          if [ -f "${{ inputs.custom_instructions_file }}" ]; then
+            echo "Adding custom instructions from ${{ inputs.custom_instructions_file }}"
+            cat "${{ inputs.custom_instructions_file }}" >> coding_rules.txt
+          else
+            echo "Custom instructions file not found, using default standards"
+          fi
+          
+          # Set as environment variable
+          RULES_CONTENT=$(cat coding_rules.txt | tr '\n' ' ' | sed 's/  */ /g')
+          echo "CODING_RULES=$RULES_CONTENT" >> $GITHUB_ENV
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ inputs.aws_region }}
+          
+      - name: Create PR Agent config
+        run: |
+          mkdir -p .pr_agent_temp
+          cat > .pr_agent_temp/config.toml << EOF
+          [config]
+          model = "bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0"
+          fallback_models = ["bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0"]
+
+          [litellm]
+          model_id = "${{ inputs.model_id }}"
+
+          [github_action_config]
+          auto_review = true
+          auto_improve = true
+
+          [pr_reviewer]
+          num_max_findings = ${{ inputs.max_findings }}
+          inline_code_comments = true
+          ask_and_reflect = true
+          require_security_review = ${{ inputs.enable_security_review }}
+
+          [pr_description]
+          extra_instructions = "answer in ${{ inputs.language == 'ja' && 'Japanese' || 'English' }}"
+
+          [pr_code_suggestions]
+          extra_instructions = "answer in ${{ inputs.language == 'ja' && 'Japanese' || 'English' }}"
+
+          [pr_add_docs]
+          extra_instructions = "answer in ${{ inputs.language == 'ja' && 'Japanese' || 'English' }}"
+
+          [pr_questions]
+          extra_instructions = "answer in ${{ inputs.language == 'ja' && 'Japanese' || 'English' }}"
+
+          [pr_update_changelog]
+          extra_instructions = "answer in ${{ inputs.language == 'ja' && 'Japanese' || 'English' }}"
+
+          [pr_test]
+          extra_instructions = "answer in ${{ inputs.language == 'ja' && 'Japanese' || 'English' }}"
+
+          [pr_improve_component]
+          extra_instructions = "answer in ${{ inputs.language == 'ja' && 'Japanese' || 'English' }}"
+          EOF
+
+      - name: Run PR-Agent with AWS Bedrock
+        uses: qodo-ai/pr-agent@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
+          AWS_REGION_NAME: ${{ inputs.aws_region }}
+          pr_reviewer.enable_review: true
+          pr_reviewer.enable_line_comments: true
+          pr_reviewer.inline_comments: true
+          pr_reviewer.extra_instructions: ${{ env.CODING_RULES }}
+          pr_reviewer.num_max_findings: ${{ inputs.max_findings }}
+          pr_reviewer.require_security_review: ${{ inputs.enable_security_review }}
+          pr_code_suggestions.enable: false
+          CONFIG_PATH: .pr_agent_temp/config.toml

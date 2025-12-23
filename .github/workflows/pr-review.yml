@@ -1,0 +1,14 @@
+name: PR Review (External Reusable Workflow Test)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  call-pr-agent:
+    # 外部リポジトリのreusable workflowを使用
+    uses: clf13092/copilot_code_review_test/.github/workflows/reusable-pr-agent.yml@main
+    with:
+      custom_instructions_file: 'CODING_STANDARDS.md'
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
