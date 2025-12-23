@@ -1,5 +1,6 @@
 # テスト用のPythonファイル - 意図的にコーディング規約違反を含む
 # 新しいPR v2でのテスト実行
+# secrets処理を修正後のテスト
 
 import os,sys
 import requests
