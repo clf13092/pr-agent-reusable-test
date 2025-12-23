@@ -5,6 +5,12 @@ on:
     types: [opened, reopened, synchronize]
 
 jobs:
+  call-simple-test:
+    # シンプルなテスト用reusable workflow
+    uses: clf13092/copilot_code_review_test/.github/workflows/simple-reusable-test.yml@main
+    with:
+      message: 'Testing reusable workflow from external repository!'
+      
   call-pr-agent:
     # 外部リポジトリのreusable workflowを使用
     uses: clf13092/copilot_code_review_test/.github/workflows/reusable-pr-agent.yml@main

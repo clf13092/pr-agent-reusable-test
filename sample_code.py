@@ -1,4 +1,7 @@
 # テスト用のPythonファイル - 意図的にコーディング規約違反を含む
+# 新しいコメントを追加してPRをトリガー
+# reusable workflowのテストを実行中
+# リポジトリをpublicに変更後のテスト
 
 import os,sys
 import requests
@@ -6,6 +9,7 @@ import requests
 # ハードコーディングされたAPIキー（セキュリティ違反）
 API_KEY="sk-1234567890abcdef"
 DATABASE_PASSWORD="password123"
+SECRET_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxx"  # 新しい機密情報を追加
 
 def badFunction(x,y):
     """不適切な関数名とフォーマット"""
