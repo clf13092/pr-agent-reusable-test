@@ -1,4 +1,5 @@
 # テスト用のTerraformファイル - 意図的にコーディング規約違反を含む
+# 新しいPR v2でのテスト実行
 
 resource "aws_instance" "BadInstanceName"{
   ami           = "ami-12345678"
@@ -7,11 +8,15 @@ resource "aws_instance" "BadInstanceName"{
   # ハードコーディングされたキーペア（セキュリティ問題）
   key_name="my-hardcoded-key"
   
+  # 新しく追加：ハードコーディングされたユーザーデータ
+  user_data = "#!/bin/bash\necho 'password123' | passwd --stdin root"
+  
   tags={
     Name="test-instance"
     Environment="production"
     # 機密情報をタグに含める（セキュリティ違反）
     DatabasePassword="secret123"
+    APIKey="sk-1234567890abcdef"  # 新しく追加
   }
 }
 
