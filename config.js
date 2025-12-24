@@ -13,7 +13,7 @@ const config={
     // AWS認証情報のハードコーディング
     aws:{
         accessKeyId:"AKIAIOSFODNN7EXAMPLE",
-        secretAccessKey:"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEYxxxx",
+        secretAccessKey:"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLExxxx",
         region:"us-east-1"
     }
 };
